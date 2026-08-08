@@ -1,13 +1,8 @@
-import React,{useEffect,useState}from'react';import{createRoot}from'react-dom/client';import{createClient}from'@supabase/supabase-js';import'./index.css';
-const supabase=createClient(import.meta.env.VITE_SUPABASE_URL||'',import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY||'');
-const logo='/resources/ib-program-logo.png';
-function App(){const[v,setV]=useState('welcome'),[email,setE]=useState(''),[pass,setP]=useState(''),[user,setU]=useState(null),[msg,setM]=useState(''),[err,setErr]=useState('');const[settings,setS]=useState({target_amount:200,reached_amount:146,progress_percent:73,start_date:'2026-05-12',completion_date:'2026-10-21',withdrawal_enabled:false});
-useEffect(()=>{supabase.auth.getSession().then(({data})=>{if(data.session){setU(data.session.user);setV('dashboard')}})},[]);
-async function login(e){e.preventDefault();setErr('');const{data,error}=await supabase.auth.signInWithPassword({email:email.trim(),password:pass});if(error){setErr('Invalid email or password.');return}setU(data.user);setV('dashboard')}
-async function reset(e){e.preventDefault();setErr('');const{error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin});setM(error?error.message:'If the email exists, a reset message has been sent.')}
-async function logout(){await supabase.auth.signOut();setU(null);setV('welcome')}
-const Logo=({small=false})=><img className={small?'logo small':'logo'} src={logo} alt="IB PROGRAM"/>;
-if(v==='welcome')return <main className="welcome"><header><Logo small/><b>IB PROGRAM</b><button onClick={()=>setV('login')}>Sign in</button></header><section><div><span>SECURE ACCOUNT PORTAL</span><h1>IB PROGRAM<br/><em>Account Access</em></h1><p>Securely access your account and view your program progress.</p><button onClick={()=>setV('login')}>Access account →</button></div><div className="card"><Logo/><h2>Welcome</h2><p>Your account information is available after secure sign-in.</p></div></section></main>;
-if(v==='login'||v==='forgot')return <main className="auth"><div className="authbox"><Logo/><h1>{v==='login'?'Welcome back':'Reset password'}</h1>{v==='login'?<form onSubmit={login}><input type="email" placeholder="Email address" value={email} onChange={e=>setE(e.target.value)} required/><input type="password" placeholder="Password" value={pass} onChange={e=>setP(e.target.value)} required/>{err&&<p className="error">{err}</p>}<button>Sign in</button><a onClick={()=>{setErr('');setM('');setV('forgot')}}>Forgot password?</a></form>:<form onSubmit={reset}><input type="email" placeholder="Email address" value={email} onChange={e=>setE(e.target.value)} required/>{msg&&<p className="success">{msg}</p>}<button>Send reset email</button><a onClick={()=>setV('login')}>Back to sign in</a></form>}</div></main>;
-return <main className="dash"><header><div><Logo small/><b>IB PROGRAM</b></div><button onClick={logout}>Log out</button></header><section><p className="eyebrow">PRIVATE ACCOUNT</p><h1>Welcome back</h1><p>{user?.email}</p><div className="progress card"><div><span>PROGRAM TARGET</span><strong>${settings.reached_amount} / ${settings.target_amount}</strong></div><div className="bar"><i style={{width:settings.progress_percent+'%'}}/></div><h2>{settings.progress_percent}% <small>completed</small></h2><div className="dates"><span>Started<br/><b>12 May 2026</b></span><span>Expected completion<br/><b>21 Oct 2026</b></span></div></div><button className="withdraw" disabled={!settings.withdrawal_enabled&&settings.progress_percent<100}>{settings.withdrawal_enabled||settings.progress_percent>=100?'Withdrawal available':'Withdrawal locked'}</button></section></main>}
-createRoot(document.getElementById('root')).render(<App/>);
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.jsx';
+import './index.css';
+
+createRoot(document.getElementById('root')).render(
+  <React.StrictMode><App /></React.StrictMode>
+);
