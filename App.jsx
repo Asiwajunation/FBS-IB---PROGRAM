@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const defaults = {
+const DEFAULTS = {
   id: 1,
   target_amount: 200,
   reached_amount: 148,
@@ -11,50 +11,61 @@ const defaults = {
   withdrawal_enabled: false,
 };
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const url = import.meta.env.VITE_SUPABASE_URL;
+const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const supabase = url && key ? createClient(url, key) : null;
 
-const supabase =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey)
-    : null;
+const money = (n) =>
+  `$${Number(n || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const prettyDate = (value) => {
+  if (!value) return '—';
+  const d = new Date(`${value}T00:00:00`);
+  return Number.isNaN(d.getTime())
+    ? value
+    : d.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+};
 
 export default function App() {
-  const [page, setPage] = useState(() =>
+  const [page, setPage] = useState(
     window.location.hash === '#reset' ? 'reset' : 'welcome'
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [user, setUser] = useState(null);
-  const [settings, setSettings] = useState(defaults);
+  const [settings, setSettings] = useState(DEFAULTS);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const configured = Boolean(supabase);
-
   useEffect(() => {
-    if (!supabase) return undefined;
+    if (!supabase) return;
+
+    let mounted = true;
 
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) {
-        setUser(data.session.user);
-        setPage(
-          data.session.user.app_metadata?.role === 'admin'
-            ? 'admin'
-            : 'dashboard'
-        );
-        loadSettings();
-      }
+      if (!mounted || !data.session?.user) return;
+      const u = data.session.user;
+      setUser(u);
+      setPage(u.app_metadata?.role === 'admin' ? 'admin' : 'dashboard');
+      loadSettings();
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
+      (_event, session) => setUser(session?.user ?? null)
     );
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   async function loadSettings() {
@@ -64,16 +75,20 @@ export default function App() {
       .select('*')
       .eq('id', 1)
       .maybeSingle();
-    if (data) setSettings(data);
+
+    if (data) setSettings({ ...DEFAULTS, ...data });
   }
 
-  async function signIn(event) {
-    event.preventDefault();
+  const go = (name) => {
+    setMessage('');
+    setPage(name);
+  };
 
+  async function signIn(e) {
+    e.preventDefault();
     if (!supabase) {
-      return setMessage(
-        'Supabase is not configured. Add the Vercel environment variables first.'
-      );
+      setMessage('Supabase is not configured. Add the Vercel environment variables.');
+      return;
     }
 
     setBusy(true);
@@ -86,50 +101,57 @@ export default function App() {
 
     setBusy(false);
 
-    if (error) return setMessage(error.message);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
 
     setUser(data.user);
     await loadSettings();
-    setPage(
-      data.user.app_metadata?.role === 'admin' ? 'admin' : 'dashboard'
-    );
+    setPage(data.user.app_metadata?.role === 'admin' ? 'admin' : 'dashboard');
   }
 
-  async function forgotPassword(event) {
-    event.preventDefault();
+  async function forgot(e) {
+    e.preventDefault();
 
-    if (!supabase) return setMessage('Supabase is not configured.');
+    if (!supabase) {
+      setMessage('Supabase is not configured.');
+      return;
+    }
+
+    if (!email.trim()) {
+      setMessage('Enter your email address.');
+      return;
+    }
 
     setBusy(true);
     setMessage('');
 
-    const redirectTo =
-      import.meta.env.MODE === 'production'
-        ? 'https://ib-program.vercel.app/#reset'
-        : `${window.location.origin}/#reset`;
-
     const { error } = await supabase.auth.resetPasswordForEmail(
       email.trim(),
-      { redirectTo }
+      { redirectTo: `${window.location.origin}/#reset` }
     );
 
     setBusy(false);
-
     setMessage(
       error
         ? error.message
-        : 'If this email belongs to an account, a password reset email has been sent.'
+        : 'If this email belongs to an account, a reset email has been sent.'
     );
   }
 
-  async function updatePassword(event) {
-    event.preventDefault();
+  async function resetPassword(e) {
+    e.preventDefault();
 
     if (newPassword.length < 8) {
-      return setMessage('Password must be at least 8 characters.');
+      setMessage('Password must be at least 8 characters.');
+      return;
     }
 
-    if (!supabase) return setMessage('Supabase is not configured.');
+    if (!supabase) {
+      setMessage('Supabase is not configured.');
+      return;
+    }
 
     setBusy(true);
     setMessage('');
@@ -140,31 +162,54 @@ export default function App() {
 
     setBusy(false);
 
-    if (error) return setMessage(error.message);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
 
-    setMessage('Password updated successfully.');
     setNewPassword('');
-    setPage('login');
     window.location.hash = '';
+    setPage('login');
+    setMessage('Password updated successfully.');
   }
 
   async function saveSettings() {
-    if (!supabase) return setMessage('Supabase is not configured.');
+    if (!supabase) {
+      setMessage('Supabase is not configured.');
+      return;
+    }
 
     setBusy(true);
     setMessage('');
 
-    const { error } = await supabase
+    const payload = {
+      id: 1,
+      target_amount: Number(settings.target_amount) || 0,
+      reached_amount: Number(settings.reached_amount) || 0,
+      progress_percent: Math.max(
+        0,
+        Math.min(100, Number(settings.progress_percent) || 0)
+      ),
+      start_date: settings.start_date || null,
+      completion_date: settings.completion_date || null,
+      withdrawal_enabled: Boolean(settings.withdrawal_enabled),
+    };
+
+    const { data, error } = await supabase
       .from('program_settings')
-      .upsert({ ...settings, id: 1 });
+      .upsert(payload)
+      .select()
+      .maybeSingle();
 
     setBusy(false);
 
-    setMessage(
-      error
-        ? 'Unable to save. Check the table and admin RLS policy.'
-        : 'Program settings saved successfully.'
-    );
+    if (error) {
+      setMessage(`Unable to save: ${error.message}`);
+      return;
+    }
+
+    setSettings({ ...DEFAULTS, ...(data || payload) });
+    setMessage('Program settings saved successfully.');
   }
 
   async function logout() {
@@ -178,11 +223,12 @@ export default function App() {
     0,
     Math.min(100, Number(settings.progress_percent) || 0)
   );
-
-  const role = user?.app_metadata?.role;
+  const admin = user?.app_metadata?.role === 'admin';
+  const withdrawalAvailable =
+    Boolean(settings.withdrawal_enabled) || progress >= 100;
 
   if (page === 'welcome') {
-    return <Welcome onLogin={() => setPage('login')} />;
+    return <Welcome onLogin={() => go('login')} />;
   }
 
   if (page === 'login') {
@@ -190,42 +236,23 @@ export default function App() {
       <Auth
         title="Welcome back"
         subtitle="Sign in to your private IB PROGRAM dashboard."
-        onBack={() => setPage('welcome')}
+        onBack={() => go('welcome')}
       >
         <form onSubmit={signIn}>
-          <Field
-            label="Email address"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            required
-          />
-          <Field
-            label="Password"
-            type="password"
-            value={password}
-            onChange={setPassword}
-            required
-          />
-          <button className="primary" disabled={busy}>
+          <Field label="Email address" type="email" value={email} onChange={setEmail} required />
+          <Field label="Password" type="password" value={password} onChange={setPassword} required />
+          <button className="primary full" disabled={busy}>
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 
-        <button
-          className="textButton"
-          onClick={() => {
-            setMessage('');
-            setPage('forgot');
-          }}
-        >
+        <button className="textButton" onClick={() => go('forgot')}>
           Forgot password?
         </button>
 
-        {!configured && (
+        {!supabase && (
           <Notice>Supabase environment variables are not configured yet.</Notice>
         )}
-
         {message && <Notice>{message}</Notice>}
       </Auth>
     );
@@ -236,21 +263,14 @@ export default function App() {
       <Auth
         title="Reset your password"
         subtitle="Enter your email and we'll send a secure reset link."
-        onBack={() => setPage('login')}
+        onBack={() => go('login')}
       >
-        <form onSubmit={forgotPassword}>
-          <Field
-            label="Email address"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            required
-          />
-          <button className="primary" disabled={busy}>
+        <form onSubmit={forgot}>
+          <Field label="Email address" type="email" value={email} onChange={setEmail} required />
+          <button className="primary full" disabled={busy}>
             {busy ? 'Sending…' : 'Send reset link'}
           </button>
         </form>
-
         {message && <Notice>{message}</Notice>}
       </Auth>
     );
@@ -261,76 +281,63 @@ export default function App() {
       <Auth
         title="Create a new password"
         subtitle="Choose a strong password with at least 8 characters."
-        onBack={() => setPage('login')}
+        onBack={() => go('login')}
       >
-        <form onSubmit={updatePassword}>
+        <form onSubmit={resetPassword}>
           <Field
             label="New password"
             type="password"
             value={newPassword}
             onChange={setNewPassword}
-            required
             minLength={8}
+            required
           />
-          <button className="primary" disabled={busy}>
+          <button className="primary full" disabled={busy}>
             {busy ? 'Updating…' : 'Update password'}
           </button>
         </form>
-
         {message && <Notice>{message}</Notice>}
       </Auth>
     );
   }
 
-  if (page === 'admin' && role === 'admin') {
+  if (page === 'admin' && admin) {
     return (
       <Shell user={user} onLogout={logout}>
         <div className="eyebrow">ADMIN CONTROL</div>
         <h1>Program settings</h1>
-        <p className="muted">
-          Update the dashboard values without changing the code.
-        </p>
+        <p className="muted">Update the values displayed on the dashboard.</p>
 
         <div className="settingsGrid">
           <Field
             label="Target amount ($)"
             type="number"
             value={settings.target_amount}
-            onChange={(v) =>
-              setSettings({ ...settings, target_amount: Number(v) })
-            }
+            onChange={(v) => setSettings({ ...settings, target_amount: Number(v) })}
           />
           <Field
             label="Amount reached ($)"
             type="number"
             value={settings.reached_amount}
-            onChange={(v) =>
-              setSettings({ ...settings, reached_amount: Number(v) })
-            }
+            onChange={(v) => setSettings({ ...settings, reached_amount: Number(v) })}
           />
           <Field
             label="Progress (%)"
             type="number"
             value={settings.progress_percent}
-            onChange={(v) =>
-              setSettings({ ...settings, progress_percent: Number(v) })
-            }
+            onChange={(v) => setSettings({ ...settings, progress_percent: Number(v) })}
           />
           <Field
             label="Start date"
             type="date"
             value={settings.start_date}
-            onChange={(v) =>
-              setSettings({ ...settings, start_date: v })
-            }
+            onChange={(v) => setSettings({ ...settings, start_date: v })}
           />
           <Field
             label="Expected completion"
             type="date"
             value={settings.completion_date}
-            onChange={(v) =>
-              setSettings({ ...settings, completion_date: v })
-            }
+            onChange={(v) => setSettings({ ...settings, completion_date: v })}
           />
         </div>
 
@@ -348,11 +355,7 @@ export default function App() {
           Enable withdrawal
         </label>
 
-        <button
-          className="primary compact"
-          onClick={saveSettings}
-          disabled={busy}
-        >
+        <button className="primary" onClick={saveSettings} disabled={busy}>
           {busy ? 'Saving…' : 'Save changes'}
         </button>
 
@@ -361,17 +364,25 @@ export default function App() {
     );
   }
 
+  if (!user) {
+    return <Welcome onLogin={() => go('login')} />;
+  }
+
   return (
     <Shell user={user} onLogout={logout}>
       <div className="eyebrow">YOUR PROGRAM</div>
       <h1>Progress dashboard</h1>
-      <p className="muted">
-        Your latest IB PROGRAM progress at a glance.
-      </p>
+      <p className="muted">Your latest IB PROGRAM information at a glance.</p>
 
-      <div className="statCard">
+      <div className="amountGrid">
+        <InfoCard label="Amount Reached" value={money(settings.reached_amount)} />
+        <InfoCard label="Target Amount" value={money(settings.target_amount)} />
+        <InfoCard label="Progress" value={`${progress}%`} />
+      </div>
+
+      <section className="statCard">
         <div className="statTop">
-          <span>Progress</span>
+          <span>Program Progress</span>
           <strong>{progress}%</strong>
         </div>
 
@@ -380,25 +391,22 @@ export default function App() {
         </div>
 
         <div className="details">
-          <div>
-            <span>Start date</span>
-            <b>{settings.start_date}</b>
-          </div>
-          <div>
-            <span>Expected completion</span>
-            <b>{settings.completion_date}</b>
-          </div>
+          <InfoDetail label="Amount reached" value={money(settings.reached_amount)} />
+          <InfoDetail label="Target amount" value={money(settings.target_amount)} />
+          <InfoDetail label="Start date" value={prettyDate(settings.start_date)} />
+          <InfoDetail label="Expected completion" value={prettyDate(settings.completion_date)} />
         </div>
-      </div>
+      </section>
 
-      <button
-        className="primary"
-        disabled={!settings.withdrawal_enabled && progress < 100}
-      >
-        {settings.withdrawal_enabled || progress >= 100
-          ? 'Withdrawal available'
-          : 'Withdrawal locked'}
-      </button>
+      <section className="statusBox">
+        <div>
+          <span>Withdrawal status</span>
+          <strong>{withdrawalAvailable ? 'Available' : 'Locked'}</strong>
+        </div>
+        <button className="primary compact" disabled={!withdrawalAvailable}>
+          {withdrawalAvailable ? 'Withdrawal available' : 'Withdrawal locked'}
+        </button>
+      </section>
     </Shell>
   );
 }
@@ -407,25 +415,17 @@ function Welcome({ onLogin }) {
   return (
     <main className="landing">
       <nav className="nav">
-        <img src="/ib-program-logo.png" alt="IB PROGRAM logo" />
-        <button className="ghost" onClick={onLogin}>
-          Sign in
-        </button>
+        <div className="brand">IB PROGRAM</div>
+        <button className="ghost" onClick={onLogin}>Sign in</button>
       </nav>
 
       <section className="hero">
         <div className="eyebrow">IB PROGRAM</div>
-        <h1>
-          Welcome to your
-          <br />
-          private dashboard.
-        </h1>
+        <h1>Welcome to your<br />private dashboard.</h1>
         <p className="muted">
           Securely access your IB PROGRAM account and monitor your program progress.
         </p>
-        <button className="primary" onClick={onLogin}>
-          Access dashboard
-        </button>
+        <button className="primary" onClick={onLogin}>Access dashboard</button>
       </section>
     </main>
   );
@@ -436,11 +436,7 @@ function Auth({ title, subtitle, children, onBack }) {
     <main className="auth">
       <div className="authBox">
         <button className="back" onClick={onBack}>← Back</button>
-        <img
-          className="authLogo"
-          src="/ib-program-logo.png"
-          alt="IB PROGRAM logo"
-        />
+        <div className="brand authBrand">IB PROGRAM</div>
         <h1>{title}</h1>
         <p className="muted">{subtitle}</p>
         {children}
@@ -453,26 +449,18 @@ function Shell({ children, user, onLogout }) {
   return (
     <main className="dashboard">
       <nav className="nav">
-        <img src="/ib-program-logo.png" alt="IB PROGRAM logo" />
+        <div className="brand">IB PROGRAM</div>
         <div className="navRight">
           <span className="user">{user?.email ?? 'Guest'}</span>
-          <button className="ghost" onClick={onLogout}>
-            Sign out
-          </button>
+          <button className="ghost" onClick={onLogout}>Sign out</button>
         </div>
       </nav>
-      {children}
+      <section className="content">{children}</section>
     </main>
   );
 }
 
-function Field({
-  label,
-  type = 'text',
-  value,
-  onChange,
-  ...props
-}) {
+function Field({ label, type = 'text', value, onChange, ...props }) {
   return (
     <label className="field">
       <span>{label}</span>
@@ -483,6 +471,24 @@ function Field({
         {...props}
       />
     </label>
+  );
+}
+
+function InfoCard({ label, value }) {
+  return (
+    <div className="amountCard">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function InfoDetail({ label, value }) {
+  return (
+    <div>
+      <span>{label}</span>
+      <b>{value}</b>
+    </div>
   );
 }
 
