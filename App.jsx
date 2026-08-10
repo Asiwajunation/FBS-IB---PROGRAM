@@ -153,10 +153,22 @@ export default function App() {
       <Field label="Start date" type="date" value={settings.start_date} onChange={v => setSettings({ ...settings, start_date: v })} />
       <Field label="Expected completion" type="date" value={settings.completion_date} onChange={v => setSettings({ ...settings, completion_date: v })} />
     </div>
-    <label className="check"><input type="checkbox" checked={Boolean(settings.withdrawal_enabled)} onChange={e => setSettings({ ...settings, withdrawal_enabled: e.target.checked })} /> Enable wit[...]
+    <label className="check">
+      <input
+        type="checkbox"
+        checked={Boolean(settings.withdrawal_enabled)}
+        onChange={e =>
+          setSettings({
+            ...settings,
+            withdrawal_enabled: e.target.checked
+          })
+        }
+      />
+      Enable withdrawal
+    </label>
     <button className="primary compact" onClick={saveSettings} disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
-    {message && <Notice>{message}</Notice>
-  }</Shell>;
+    {message && <Notice>{message}</Notice>}
+  </Shell>;
 
   return <Shell user={user} onLogout={logout}>
     <div className="eyebrow">YOUR PROGRAM</div><h1>Progress dashboard</h1><p className="muted">Your latest IB PROGRAM progress at a glance.</p>
