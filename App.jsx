@@ -77,9 +77,7 @@ export default function App() {
 
     const { error } = await supabase.auth.resetPasswordForEmail(
       email.trim(),
-      {
-        redirectTo,
-      }
+      { redirectTo }
     );
 
     setBusy(false);
@@ -137,8 +135,8 @@ export default function App() {
       <Field label="Email address" type="email" value={email} onChange={setEmail} required />
       <button className="primary" disabled={busy}>{busy ? 'Sending…' : 'Send reset link'}</button>
     </form>
-    {message && <Notice>{message}</Notice>}
-  </Auth>;
+    {message && <Notice>{message}</Notice>
+  }</Auth>;
   if (page === 'reset') return <Auth title="Create a new password" subtitle="Choose a strong password with at least 8 characters." onBack={() => setPage('login')}>
     <form onSubmit={updatePassword}>
       <Field label="New password" type="password" value={newPassword} onChange={setNewPassword} required minLength={8} />
@@ -162,14 +160,14 @@ export default function App() {
 
   return <Shell user={user} onLogout={logout}>
     <div className="eyebrow">YOUR PROGRAM</div><h1>Progress dashboard</h1><p className="muted">Your latest IB PROGRAM progress at a glance.</p>
-    <div className="statCard"><div className="statTop"><span>Progress</span><strong>{progress}%</strong></div><div className="bar"><span style={{ width: `${progress}%` }} /></div><div className="[...]
+    <div className="statCard"><div className="statTop"><span>Progress</span><strong>{progress}%</strong></div><div className="bar"><span style={{ width: `${progress}%` }} /></div><div className="[...]"/>
     <div className="details"><div><span>Start date</span><b>{settings.start_date}</b></div><div><span>Expected completion</span><b>{settings.completion_date}</b></div></div>
     <button className="primary" disabled={!settings.withdrawal_enabled && progress < 100}>{settings.withdrawal_enabled || progress >= 100 ? 'Withdrawal available' : 'Withdrawal locked'}</button>
   </Shell>;
 }
 
-function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><button className="ghost" onClick={onLogin}>Sign in</[...]}
+function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><button className="ghost" onClick={onLogin}>Sign in</[...]
 function Auth({ title, subtitle, children, onBack }) { return <main className="auth"><div className="authBox"><button className="back" onClick={onBack}>← Back</button><img className="authLogo" [...]
-function Shell({ children, user, onLogout }) { return <main className="dashboard"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><div className="navRight"><span clas[...]
+function Shell({ children, user, onLogout }) { return <main className="dashboard"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><div className="navRight"><span clas[...] 
 function Field({ label, type='text', value, onChange, ...props }) { return <label className="field"><span>{label}</span><input type={type} value={value ?? ''} onChange={e => onChange(e.target.val[...]
 function Notice({ children }) { return <div className="notice">{children}</div> }
