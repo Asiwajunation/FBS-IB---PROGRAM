@@ -135,21 +135,21 @@ export default function App() {
       <Field label="Start date" type="date" value={settings.start_date} onChange={v => setSettings({ ...settings, start_date: v })} />
       <Field label="Expected completion" type="date" value={settings.completion_date} onChange={v => setSettings({ ...settings, completion_date: v })} />
     </div>
-    <label className="check"><input type="checkbox" checked={Boolean(settings.withdrawal_enabled)} onChange={e => setSettings({ ...settings, withdrawal_enabled: e.target.checked })} /> Enable withdrawal</label>
+    <label className="check"><input type="checkbox" checked={Boolean(settings.withdrawal_enabled)} onChange={e => setSettings({ ...settings, withdrawal_enabled: e.target.checked })} /> Enable wit[...]
     <button className="primary compact" onClick={saveSettings} disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
     {message && <Notice>{message}</Notice>}
   </Shell>;
 
   return <Shell user={user} onLogout={logout}>
     <div className="eyebrow">YOUR PROGRAM</div><h1>Progress dashboard</h1><p className="muted">Your latest IB PROGRAM progress at a glance.</p>
-    <div className="statCard"><div className="statTop"><span>Progress</span><strong>{progress}%</strong></div><div className="bar"><span style={{ width: `${progress}%` }} /></div><div className="amount"><strong>${settings.reached_amount}</strong><span>of ${settings.target_amount}</span></div></div>
+    <div className="statCard"><div className="statTop"><span>Progress</span><strong>{progress}%</strong></div><div className="bar"><span style={{ width: `${progress}%` }} /></div><div className="[...]
     <div className="details"><div><span>Start date</span><b>{settings.start_date}</b></div><div><span>Expected completion</span><b>{settings.completion_date}</b></div></div>
     <button className="primary" disabled={!settings.withdrawal_enabled && progress < 100}>{settings.withdrawal_enabled || progress >= 100 ? 'Withdrawal available' : 'Withdrawal locked'}</button>
   </Shell>;
 }
 
-function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM" /><button className="ghost" onClick={onLogin}>Sign in</button></nav><section className="heroGrid"><div><div className="eyebrow">SECURE ACCOUNT ACCESS</div><h1>Everything about your <em>IB PROGRAM</em>, in one place.</h1><p>Secure sign-in, password recovery and a clean progress dashboard built for simple account management.</p><button className="primary heroButton" onClick={onLogin}>Access your account <span>→</span></button></div><div className="featureCard"><img src="/ib-program-logo.png" alt="IB Program logo" /><h2>Partner with success.</h2><p>Track your progress with a focused, professional dashboard.</p><div className="mini"><span>Secure access</span><span>Live progress</span><span>Account control</span></div></div></section></main> }
-function Auth({ title, subtitle, children, onBack }) { return <main className="auth"><div className="authBox"><button className="back" onClick={onBack}>← Back</button><img className="authLogo" src="/ib-program-logo.png" alt="IB PROGRAM" /><h1>{title}</h1><p className="muted">{subtitle}</p>{children}</div></main> }
-function Shell({ children, user, onLogout }) { return <main className="dashboard"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM" /><div className="navRight"><span className="userEmail">{user?.email}</span><button className="ghost" onClick={onLogout}>Log out</button></div></nav><section className="dashContent">{children}</section></main> }
-function Field({ label, type='text', value, onChange, ...props }) { return <label className="field"><span>{label}</span><input type={type} value={value ?? ''} onChange={e => onChange(e.target.value)} {...props} /></label> }
+function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><button className="ghost" onClick={onLogin}>Sign in</button></nav><section className="heroGrid"><div><div className="eyebrow">SECURE ACCOUNT ACCESS</div><h1>Everything about your <em>IB PROGRAM</em>, in one place.</h1><p>Secure sign-in, password recovery and a clean progress dashboard built for simple account management.</p><button className="primary heroButton" onClick={onLogin}>Access your account <span>→</span></button></div><div className="featureCard"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><h2>Partner with success.</h2><p>Track your progress with a focused, professional dashboard.</p><div className="mini"><span>Secure access</span><span>Live progress</span><span>Account control</span></div></div></section></main> }
+function Auth({ title, subtitle, children, onBack }) { return <main className="auth"><div className="authBox"><button className="back" onClick={onBack}>← Back</button><img className="authLogo" [...]
+function Shell({ children, user, onLogout }) { return <main className="dashboard"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><div className="navRight"><span className
+function Field({ label, type='text', value, onChange, ...props }) { return <label className="field"><span>{label}</span><input type={type} value={value ?? ''} onChange={e => onChange(e.target.val[...]
 function Notice({ children }) { return <div className="notice">{children}</div> }
