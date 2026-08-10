@@ -63,12 +63,19 @@ export default function App() {
   async function forgotPassword(event) {
     event.preventDefault();
     if (!supabase) return setMessage('Supabase is not configured.');
-    setBusy(true); setMessage('');
+    setBusy(true);
+    setMessage('');
+
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/#reset`,
+      redirectTo: 'https://ib-program.vercel.app/#reset',
     });
+
     setBusy(false);
-    setMessage(error ? error.message : 'If this email belongs to an account, a password reset email has been sent.');
+    setMessage(
+      error
+        ? error.message
+        : 'If this email belongs to an account, a password reset email has been sent.'
+    );
   }
 
   async function updatePassword(event) {
