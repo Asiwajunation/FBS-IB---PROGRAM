@@ -1,50 +1,14 @@
-# IB PROGRAM — Fresh Project
+# IB PROGRAM
 
-## Includes
-- React + Vite
-- Supabase authentication
-- Login
-- Forgot password
-- Password reset
-- User dashboard
-- Admin settings
-- Amount reached
-- Target amount
-- Progress percentage
-- Start date
-- Expected completion date
-- Withdrawal status
+Vercel-ready React + Supabase version of the IB Program portal.
 
-## Local setup
+## Setup
+1. Copy `.env.example` to `.env.local`.
+2. Put your Supabase project URL and publishable key in `.env.local`.
+3. Run `npm install` then `npm run build`.
+4. In Vercel, add the same two variables under Project Settings → Environment Variables.
+5. In Supabase Authentication → URL Configuration, add your Vercel URL as a Redirect URL.
 
-1. Install Node.js.
-2. Run `npm install`.
-3. Copy `.env.example` to `.env`.
-4. Put your Supabase URL and publishable key into `.env`.
-5. Run `npm run dev`.
+The public welcome page does not show the private progress/withdrawal information. After authentication, the dashboard shows the $200 target, $146 reached, 73% progress, dates, and a withdrawal control locked until 100%.
 
-## Vercel
-
-Import this folder/repository into Vercel.
-
-Add these Production environment variables:
-
-`VITE_SUPABASE_URL`
-
-`VITE_SUPABASE_PUBLISHABLE_KEY`
-
-Then deploy.
-
-## Supabase table
-
-The application expects a `program_settings` table with:
-
-- id
-- target_amount
-- reached_amount
-- progress_percent
-- start_date
-- completion_date
-- withdrawal_enabled
-
-The default UI values are shown even before Supabase is connected, so the dashboard can be visually tested locally.
+Do not put a Supabase service-role/secret key in this project or in Vercel client-side environment variables.
