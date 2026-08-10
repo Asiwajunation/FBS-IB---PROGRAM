@@ -215,8 +215,60 @@ export default function App() {
   );
 }
 
-function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><button className="ghost" onClick={onLogin}>Sign in</[...]
-function Auth({ title, subtitle, children, onBack }) { return <main className="auth"><div className="authBox"><button className="back" onClick={onBack}>← Back</button><img className="authLogo" [...]
-function Shell({ children, user, onLogout }) { return <main className="dashboard"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><div className="navRight"><span clas[...] 
-function Field({ label, type='text', value, onChange, ...props }) { return <label className="field"><span>{label}</span><input type={type} value={value ?? ''} onChange={e => onChange(e.target.val[...]
+function Welcome({ onLogin }) {
+  return (
+    <main className="landing">
+      <nav className="nav">
+        <img
+          src="/ib-program-logo.png"
+          alt="IB PROGRAM logo"
+        />
+        <button className="ghost" onClick={onLogin}>
+          Sign in
+        </button>
+      </nav>
+
+      {/* rest of Welcome page */}
+    </main>
+  );
+}
+
+function Auth({ title, subtitle, children, onBack }) {
+  return (
+    <main className="auth">
+      <div className="authBox">
+        <button className="back" onClick={onBack}>← Back</button>
+        <img className="authLogo" src="/ib-program-logo.png" alt="IB PROGRAM logo" />
+        <h1>{title}</h1>
+        <p className="muted">{subtitle}</p>
+        {children}
+      </div>
+    </main>
+  );
+}
+
+function Shell({ children, user, onLogout }) {
+  return (
+    <main className="dashboard">
+      <nav className="nav">
+        <img src="/ib-program-logo.png" alt="IB PROGRAM logo" />
+        <div className="navRight">
+          <span className="user">{user?.email ?? 'Guest'}</span>
+          <button className="ghost" onClick={onLogout}>Sign out</button>
+        </div>
+      </nav>
+      {children}
+    </main>
+  );
+}
+
+function Field({ label, type='text', value, onChange, ...props }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <input type={type} value={value ?? ''} onChange={e => onChange(e.target.value)} {...props} />
+    </label>
+  );
+}
+
 function Notice({ children }) { return <div className="notice">{children}</div> }
