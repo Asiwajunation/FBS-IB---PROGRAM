@@ -53,8 +53,14 @@ function normalizeSettings(data: Partial<Settings> | null | undefined): Settings
 }
 
 export default function App() {
+  const isRecoveryUrl = () => {
+    const hash = window.location.hash;
+    const query = new URLSearchParams(window.location.search);
+    return query.get('reset') === '1' || hash.includes('access_token=') || hash.includes('type=recovery');
+  };
+
   const [page, setPage] = useState<'welcome' | 'login' | 'forgot' | 'reset' | 'dashboard' | 'admin'>(
-    window.location.hash.includes('access_token=') || window.location.hash.includes('type=recovery') ? 'reset' : 'welcome'
+    isRecoveryUrl() ? 'reset' : 'welcome'
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,15 +75,22 @@ export default function App() {
     let mounted = true;
 
     const initialize = async () => {
-      const hash = window.location.hash;
-      const recoveryLink = hash.includes('access_token=') || hash.includes('type=recovery');
+      const recoveryLink = isRecoveryUrl();
       if (recoveryLink) setPage('reset');
 
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
       const current = data.session?.user ?? null;
       setUser(current);
-      if (current && !recoveryLink) {
+
+      if (recoveryLink) {
+        if (!current) {
+          setMessage('Recovery session is being established. Please wait a moment and try again.');
+        }
+        return;
+      }
+
+      if (current) {
         setPage(current.app_metadata?.role === 'admin' ? 'admin' : 'dashboard');
         await loadSettings();
       }
@@ -93,9 +106,9 @@ export default function App() {
         setMessage('');
         return;
       }
-      if (current && event !== 'SIGNED_OUT') {
+      if (current && event !== 'SIGNED_OUT' && !isRecoveryUrl()) {
         void loadSettings();
-        if (page !== 'reset') setPage(current.app_metadata?.role === 'admin' ? 'admin' : 'dashboard');
+        setPage(current.app_metadata?.role === 'admin' ? 'admin' : 'dashboard');
       }
     });
 
@@ -134,7 +147,8 @@ export default function App() {
     event.preventDefault();
     if (!supabase) { setMessage('Supabase is not configured.'); return; }
     setBusy(true); setMessage('');
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/#reset` });
+    const redirectTo = `${window.location.origin}/?reset=1`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
     setBusy(false);
     setMessage(error ? error.message : 'If this email belongs to an account, a reset email has been sent.');
   }
@@ -143,7 +157,15 @@ export default function App() {
     event.preventDefault();
     if (newPassword.length < 8) { setMessage('Password must be at least 8 characters.'); return; }
     if (!supabase) { setMessage('Supabase is not configured.'); return; }
+
     setBusy(true); setMessage('');
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      setBusy(false);
+      setMessage('Recovery session missing or expired. Please request a new password reset link.');
+      return;
+    }
+
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setBusy(false);
     if (error) { setMessage(error.message); return; }
