@@ -1,29 +1,50 @@
-# IB PROGRAM
+# IB PROGRAM — Fresh Project
 
-A redesigned Vite + React IB PROGRAM dashboard with Supabase authentication, password reset, progress tracking, admin settings, and the IB PROGRAM logo.
+## Includes
+- React + Vite
+- Supabase authentication
+- Login
+- Forgot password
+- Password reset
+- User dashboard
+- Admin settings
+- Amount reached
+- Target amount
+- Progress percentage
+- Start date
+- Expected completion date
+- Withdrawal status
 
-## GitHub / Vercel structure
+## Local setup
 
-This project intentionally uses the same root-level structure as the existing repository:
+1. Install Node.js.
+2. Run `npm install`.
+3. Copy `.env.example` to `.env`.
+4. Put your Supabase URL and publishable key into `.env`.
+5. Run `npm run dev`.
 
-- `index.html`
-- `main.jsx`
-- `App.jsx`
-- `index.css`
-- `package.json`
-- `vite.config.js`
-- `vercel.json`
-- `ib-program-logo.png`
+## Vercel
 
-## Supabase environment variables
+Import this folder/repository into Vercel.
 
-In Vercel, add:
+Add these Production environment variables:
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
+`VITE_SUPABASE_URL`
 
-The Supabase database should contain a `program_settings` table with one row using `id = 1`.
+`VITE_SUPABASE_PUBLISHABLE_KEY`
 
-## Deploy
+Then deploy.
 
-Push/commit the files to the existing `main` branch. Vercel should automatically start a new deployment from the GitHub commit.
+## Supabase table
+
+The application expects a `program_settings` table with:
+
+- id
+- target_amount
+- reached_amount
+- progress_percent
+- start_date
+- completion_date
+- withdrawal_enabled
+
+The default UI values are shown even before Supabase is connected, so the dashboard can be visually tested locally.
