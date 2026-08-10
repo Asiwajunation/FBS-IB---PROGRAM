@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 const defaults = {
   id: 1,
   target_amount: 200,
-  reached_amount: 146,
+  reached_amount: 148,
   progress_percent: 73,
   start_date: '2026-05-12',
   completion_date: '2026-10-21',
@@ -148,8 +148,8 @@ export default function App() {
   </Shell>;
 }
 
-function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><button className="ghost" onClick={onLogin}>Sign in</button></nav><section className="heroGrid"><div><div className="eyebrow">SECURE ACCOUNT ACCESS</div><h1>Everything about your <em>IB PROGRAM</em>, in one place.</h1><p>Secure sign-in, password recovery and a clean progress dashboard built for simple account management.</p><button className="primary heroButton" onClick={onLogin}>Access your account <span>→</span></button></div><div className="featureCard"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><h2>Partner with success.</h2><p>Track your progress with a focused, professional dashboard.</p><div className="mini"><span>Secure access</span><span>Live progress</span><span>Account control</span></div></div></section></main> }
+function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><button className="ghost" onClick={onLogin}>Sign in</[...]
 function Auth({ title, subtitle, children, onBack }) { return <main className="auth"><div className="authBox"><button className="back" onClick={onBack}>← Back</button><img className="authLogo" [...]
-function Shell({ children, user, onLogout }) { return <main className="dashboard"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><div className="navRight"><span className
+function Shell({ children, user, onLogout }) { return <main className="dashboard"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><div className="navRight"><span clas[...]
 function Field({ label, type='text', value, onChange, ...props }) { return <label className="field"><span>{label}</span><input type={type} value={value ?? ''} onChange={e => onChange(e.target.val[...]
 function Notice({ children }) { return <div className="notice">{children}</div> }
