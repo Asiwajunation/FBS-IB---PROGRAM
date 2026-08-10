@@ -62,15 +62,28 @@ export default function App() {
 
   async function forgotPassword(event) {
     event.preventDefault();
-    if (!supabase) return setMessage('Supabase is not configured.');
+
+    if (!supabase) {
+      return setMessage('Supabase is not configured.');
+    }
+
     setBusy(true);
     setMessage('');
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: 'https://ib-program.vercel.app/#reset',
-    });
+    const redirectTo =
+      import.meta.env.MODE === 'production'
+        ? 'https://ib-program.vercel.app/#reset'
+        : `${window.location.origin}/#reset`;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email.trim(),
+      {
+        redirectTo,
+      }
+    );
 
     setBusy(false);
+
     setMessage(
       error
         ? error.message
@@ -131,8 +144,8 @@ export default function App() {
       <Field label="New password" type="password" value={newPassword} onChange={setNewPassword} required minLength={8} />
       <button className="primary" disabled={busy}>{busy ? 'Updating…' : 'Update password'}</button>
     </form>
-    {message && <Notice>{message}</Notice>}
-  </Auth>;
+    {message && <Notice>{message}</Notice>
+  }</Auth>;
   if (page === 'admin' && role === 'admin') return <Shell user={user} onLogout={logout}>
     <div className="eyebrow">ADMIN CONTROL</div><h1>Program settings</h1><p className="muted">Update the dashboard values without changing the code.</p>
     <div className="settingsGrid">
@@ -144,8 +157,8 @@ export default function App() {
     </div>
     <label className="check"><input type="checkbox" checked={Boolean(settings.withdrawal_enabled)} onChange={e => setSettings({ ...settings, withdrawal_enabled: e.target.checked })} /> Enable wit[...]
     <button className="primary compact" onClick={saveSettings} disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
-    {message && <Notice>{message}</Notice>}
-  </Shell>;
+    {message && <Notice>{message}</Notice>
+  }</Shell>;
 
   return <Shell user={user} onLogout={logout}>
     <div className="eyebrow">YOUR PROGRAM</div><h1>Progress dashboard</h1><p className="muted">Your latest IB PROGRAM progress at a glance.</p>
@@ -155,7 +168,7 @@ export default function App() {
   </Shell>;
 }
 
-function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><button className="ghost" onClick={onLogin}>Sign in</[...]
+function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><button className="ghost" onClick={onLogin}>Sign in</[...]}
 function Auth({ title, subtitle, children, onBack }) { return <main className="auth"><div className="authBox"><button className="back" onClick={onBack}>← Back</button><img className="authLogo" [...]
 function Shell({ children, user, onLogout }) { return <main className="dashboard"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><div className="navRight"><span clas[...]
 function Field({ label, type='text', value, onChange, ...props }) { return <label className="field"><span>{label}</span><input type={type} value={value ?? ''} onChange={e => onChange(e.target.val[...]
