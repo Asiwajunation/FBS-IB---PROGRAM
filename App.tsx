@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createClient, type User } from '@supabase/supabase-js';
+
 type Settings = {
   id: number;
   target_amount: number;
@@ -9,8 +10,6 @@ type Settings = {
   completion_date: string;
   withdrawal_enabled: boolean;
 };
-  });
-}
 
 const DEFAULTS: Settings = {
   id: 1,
@@ -404,9 +403,11 @@ function Shell({ children, user, onLogout }: {
 }
 
 function Field({ label, type = 'text', value, onChange, ...props }: {
-  label: string; type?: string; value: string | number; onChange: (value: string) => void;
-  [key: string]: unknown;
-}) {
+  label: string;
+  type?: React.HTMLInputTypeAttribute;
+  value: string | number;
+  onChange: (value: string) => void;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'>) {
   return (
     <label className="field">
       <span>{label}</span>
