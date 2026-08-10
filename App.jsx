@@ -170,12 +170,49 @@ export default function App() {
     {message && <Notice>{message}</Notice>}
   </Shell>;
 
-  return <Shell user={user} onLogout={logout}>
-    <div className="eyebrow">YOUR PROGRAM</div><h1>Progress dashboard</h1><p className="muted">Your latest IB PROGRAM progress at a glance.</p>
-    <div className="statCard"><div className="statTop"><span>Progress</span><strong>{progress}%</strong></div><div className="bar"><span style={{ width: `${progress}%` }} /></div><div className="[...]"/>
-    <div className="details"><div><span>Start date</span><b>{settings.start_date}</b></div><div><span>Expected completion</span><b>{settings.completion_date}</b></div></div>
-    <button className="primary" disabled={!settings.withdrawal_enabled && progress < 100}>{settings.withdrawal_enabled || progress >= 100 ? 'Withdrawal available' : 'Withdrawal locked'}</button>
-  </Shell>;
+  return (
+    <Shell user={user} onLogout={logout}>
+      <div className="eyebrow">YOUR PROGRAM</div>
+
+      <h1>Progress dashboard</h1>
+
+      <p className="muted">
+        Your latest IB PROGRAM progress at a glance.
+      </p>
+
+      <div className="statCard">
+        <div className="statTop">
+          <span>Progress</span>
+          <strong>{progress}%</strong>
+        </div>
+
+        <div className="bar">
+          <span style={{ width: `${progress}%` }} />
+        </div>
+
+        <div className="details">
+          <div>
+            <span>Start date</span>
+            <b>{settings.start_date}</b>
+          </div>
+
+          <div>
+            <span>Expected completion</span>
+            <b>{settings.completion_date}</b>
+          </div>
+        </div>
+      </div>
+
+      <button
+        className="primary"
+        disabled={!settings.withdrawal_enabled && progress < 100}
+      >
+        {settings.withdrawal_enabled || progress >= 100
+          ? 'Withdrawal available'
+          : 'Withdrawal locked'}
+      </button>
+    </Shell>
+  );
 }
 
 function Welcome({ onLogin }) { return <main className="landing"><nav className="nav"><img src="/ib-program-logo.png" alt="IB PROGRAM logo" /><button className="ghost" onClick={onLogin}>Sign in</[...]
