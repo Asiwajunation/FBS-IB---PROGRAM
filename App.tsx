@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { createClient, type User } from '@supabase/supabase-js';
-
-if (data) {
-  setSettings({
-    id: Number(data.id),
-    target_amount: Number(data.target_amount),
-    reached_amount: Number(data.reached_amount),
-    progress_percent: Number(data.progress_percent),
-    start_date: data.start_date ?? '',
-    completion_date: data.completion_date ?? '',
-    withdrawal_enabled: Boolean(data.withdrawal_enabled),
+type Settings = {
+  id: number;
+  target_amount: number;
+  reached_amount: number;
+  progress_percent: number;
+  start_date: string;
+  completion_date: string;
+  withdrawal_enabled: boolean;
+};
   });
 }
 
