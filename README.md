@@ -1,14 +1,22 @@
-# IB PROGRAM
+# IB PROGRAM — TypeScript/Vite fresh project
 
-Vercel-ready React + Supabase version of the IB Program portal.
+This project intentionally uses `src/App.tsx` and `src/main.tsx` to match a TypeScript Vite repository.
 
-## Setup
-1. Copy `.env.example` to `.env.local`.
-2. Put your Supabase project URL and publishable key in `.env.local`.
-3. Run `npm install` then `npm run build`.
-4. In Vercel, add the same two variables under Project Settings → Environment Variables.
-5. In Supabase Authentication → URL Configuration, add your Vercel URL as a Redirect URL.
+Dashboard includes:
+- Amount reached
+- Target amount
+- Progress
+- Start date
+- Expected completion
+- Withdrawal status
+- Login and password reset
+- Supabase integration
+- Admin controls
+- Vercel SPA rewrite
 
-The public welcome page does not show the private progress/withdrawal information. After authentication, the dashboard shows the $200 target, $146 reached, 73% progress, dates, and a withdrawal control locked until 100%.
-
-Do not put a Supabase service-role/secret key in this project or in Vercel client-side environment variables.
+Deploy:
+1. Replace the old project files with these files.
+2. Run `npm install`.
+3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in Vercel.
+4. Build command: `npm run build`.
+5. Output directory: `dist`.

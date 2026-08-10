@@ -1,22 +1,423 @@
-import {useEffect,useState} from "react";
-import {supabase} from "./lib/supabase";
-import {ArrowRight,CheckCircle2,Eye,EyeOff,LockKeyhole,Mail,ShieldCheck} from "lucide-react";
-type View="landing"|"login"|"forgot"|"reset"|"dashboard";
+import React, { useEffect, useState } from 'react';
+import { createClient, type User } from '@supabase/supabase-js';
 
-export default function App(){
- const [view,setView]=useState<View>("landing"),[email,setEmail]=useState("utulu.augustine@gmail.com"),[password,setPassword]=useState(""),[newPassword,setNewPassword]=useState(""),[show,setShow]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState(""),[user,setUser]=useState<any>(null);
- const pct=73,target=200,reached=146,complete=pct>=100;
- useEffect(()=>{(async()=>{const h=new URLSearchParams(location.hash.replace(/^#/,""));if(h.get("access_token")&&h.get("type")==="recovery"){setView("reset");setMessage("Your reset link is valid. Choose a new password.");return}const {data}=await supabase.auth.getSession();if(data.session){setUser(data.session.user);setView("dashboard")}})();const {data}=supabase.auth.onAuthStateChange((_e,s)=>{if(s)setUser(s.user)});return()=>data.subscription.unsubscribe()},[]);
- const run=async(fn:any)=>{setLoading(true);setError("");setMessage("");try{const r=await fn();if(r.error)setError(r.error.message);return r}finally{setLoading(false)}};
- const login=async()=>{const r=await run(()=>supabase.auth.signInWithPassword({email,password}));if(!r.error)setView("dashboard")};
- const forgot=async()=>{const r=await run(()=>supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin}));if(!r.error)setMessage("If this email belongs to an account, a password-reset email has been sent.")};
- const reset=async()=>{if(newPassword.length<8){setError("Password must be at least 8 characters.");return}const r=await run(()=>supabase.auth.updateUser({password:newPassword}));if(!r.error){history.replaceState({},"",location.pathname);await supabase.auth.signOut();setMessage("Your password has been updated.");setView("login")}};
- const logout=async()=>{await supabase.auth.signOut();setUser(null);setPassword("");setView("landing")};
- const Field=({label,value,onChange,type="text",icon}:any)=><label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">{icon}</span><input type={type} value={value} onChange={e=>onChange(e.target.value)} className="w-full rounded-2xl border border-slate-200 px-11 py-3.5 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"/></div></label>;
- const Card=({title,sub,children}:any)=><div className="min-h-screen bg-slate-50 px-5 py-10"><div className="mx-auto max-w-md"><button onClick={()=>setView("landing")} className="mb-8 font-black text-emerald-700">IB PROGRAM</button><div className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200 sm:p-8"><div className="mb-7"><div className="mb-4 inline-flex rounded-2xl bg-emerald-50 p-3 text-emerald-700"><LockKeyhole/></div><h1 className="text-2xl font-black">{title}</h1><p className="mt-2 text-sm text-slate-500">{sub}</p></div>{error&&<div className="mb-4 rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</div>}{message&&<div className="mb-4 rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-700">{message}</div>}{children}</div></div></div>;
- if(view==="dashboard"&&user)return <main className="min-h-screen bg-slate-50 text-slate-900"><nav className="border-b border-emerald-100 bg-white"><div className="mx-auto flex max-w-6xl justify-between px-5 py-4"><b className="text-emerald-700">IB PROGRAM</b><button onClick={logout} className="rounded-xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-700">Log out</button></div></nav><section className="mx-auto max-w-6xl px-5 py-10"><p className="text-sm font-semibold text-emerald-700">Account dashboard</p><h1 className="mt-2 text-3xl font-black">Welcome back</h1><div className="mt-7 grid gap-5 md:grid-cols-3"><div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-emerald-100 md:col-span-2"><div className="flex gap-3"><ShieldCheck className="text-emerald-700"/><div><p className="text-sm text-slate-500">Account holder</p><b>{user.user_metadata?.name||"Augustine Utulu"}</b><p className="text-sm text-slate-500">{user.email}</p></div></div><div className="mt-7 grid gap-4 sm:grid-cols-2"><div className="rounded-2xl bg-slate-50 p-5"><p className="text-sm text-slate-500">Account status</p><b className="mt-1 flex gap-2 text-emerald-700"><CheckCircle2 size={18}/>Active</b></div><div className="rounded-2xl bg-emerald-700 p-5 text-white"><p className="text-sm text-emerald-100">Progress reached</p><b className="text-3xl">${reached}</b><p className="text-xs text-emerald-100">{pct}% of ${target} target</p></div></div><div className="mt-5 rounded-3xl border border-emerald-100 p-6"><div className="flex justify-between"><div><p className="font-semibold text-emerald-700">Program roadmap</p><b className="text-2xl">${reached} <span className="text-base text-slate-400">/ ${target}</span></b></div><b className="text-2xl text-emerald-700">{pct}%</b></div><div className="mt-4 h-3 rounded-full bg-slate-100"><div className="h-full rounded-full bg-emerald-600" style={{width:`${pct}%`}}/></div><div className="mt-5 grid gap-4 text-sm sm:grid-cols-2"><div><p className="text-slate-400">Starting date</p><b>12 May 2026</b></div><div className="sm:text-right"><p className="text-slate-400">Expected completion</p><b>21 October 2026</b></div></div></div></div><div className="rounded-3xl bg-emerald-800 p-6 text-white"><p className="text-emerald-100">Program access</p><h2 className="mt-2 text-2xl font-black">Independent access</h2><div className="mt-8 border-t border-white/10 pt-5"><p>Withdrawal</p><button disabled={!complete} className="mt-3 w-full rounded-2xl bg-white/10 px-4 py-3 font-bold disabled:opacity-50">{complete?"Withdrawal available":"Withdrawal locked"}</button><p className="mt-2 text-xs text-slate-400">Available only when progress reaches 100%.</p></div></div></div></section></main>;
- if(view==="login")return <Card title="Welcome back" sub="Sign in securely to your IB Program account."><div className="space-y-5"><Field label="Email address" value={email} onChange={setEmail} type="email" icon={<Mail size={18}/>}/><div className="relative"><Field label="Password" value={password} onChange={setPassword} type={show?"text":"password"} icon={<LockKeyhole size={18}/>}/><button onClick={()=>setShow(!show)} className="absolute right-3 top-9 p-2 text-slate-400">{show?<EyeOff size={18}/>:<Eye size={18}/>}</button></div><button disabled={loading} onClick={login} className="flex w-full justify-center gap-2 rounded-2xl bg-emerald-700 py-3.5 font-bold text-white">{loading?"Signing in...":"Sign in"} <ArrowRight size={18}/></button><button onClick={()=>setView("forgot")} className="w-full text-sm font-semibold text-emerald-700">Forgot password?</button></div></Card>;
- if(view==="forgot")return <Card title="Reset your password" sub="Enter the email connected to your account."><div className="space-y-5"><Field label="Email address" value={email} onChange={setEmail} type="email" icon={<Mail size={18}/>}/><button disabled={loading} onClick={forgot} className="w-full rounded-2xl bg-emerald-700 py-3.5 font-bold text-white">{loading?"Sending...":"Send reset email"}</button><button onClick={()=>setView("login")} className="w-full text-sm text-slate-500">Back to sign in</button></div></Card>;
- if(view==="reset")return <Card title="Create a new password" sub="Choose a strong password."><div className="space-y-5"><Field label="New password" value={newPassword} onChange={setNewPassword} type="password" icon={<LockKeyhole size={18}/>}/><button disabled={loading} onClick={reset} className="w-full rounded-2xl bg-emerald-700 py-3.5 font-bold text-white">{loading?"Updating...":"Update password"}</button></div></Card>;
- return <main className="min-h-screen bg-slate-950 text-white"><nav className="mx-auto flex max-w-6xl justify-between px-5 py-5"><b className="text-emerald-300">IB PROGRAM</b><button onClick={()=>setView("login")} className="rounded-xl border border-white/15 px-4 py-2 text-sm font-bold">Sign in</button></nav><section className="mx-auto grid min-h-[calc(100vh-80px)] max-w-6xl items-center gap-12 px-5 py-12 lg:grid-cols-[1.15fr_.85fr]"><div><div className="mb-5 inline-flex gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-300"><ShieldCheck size={15}/>Secure account access</div><h1 className="text-5xl font-black leading-tight sm:text-6xl">Your IB Program access, <span className="text-emerald-400">in one place.</span></h1><p className="mt-6 max-w-xl text-slate-300">Secure account access, password recovery and a private program dashboard in one place.</p><button onClick={()=>setView("login")} className="mt-8 inline-flex gap-2 rounded-2xl bg-emerald-500 px-6 py-3.5 font-black text-slate-950">Access account <ArrowRight size={18}/></button></div><div className="rounded-[2rem] border border-white/10 bg-white/[.06] p-6"><div className="rounded-3xl border-t-4 border-emerald-600 bg-white p-6 text-slate-900"><p className="font-semibold text-emerald-700">Secure portal</p><h2 className="mt-3 text-2xl font-black">Private account access</h2><p className="mt-3 text-sm text-slate-500">Sign in to view your personal account information and program details.</p><div className="mt-6 flex gap-3 rounded-2xl bg-emerald-50 p-4"><ShieldCheck className="text-emerald-700"/><div><b className="text-sm">Protected dashboard</b><p className="text-xs text-slate-500">Account details are available after sign in.</p></div></div></div></div></section></main>;
+type Settings = {
+  id: number;
+  target_amount: number;
+  reached_amount: number;
+  progress_percent: number;
+  start_date: string;
+  completion_date: string;
+  withdrawal_enabled: boolean;
+};
+
+const DEFAULTS: Settings = {
+  id: 1,
+  target_amount: 200,
+  reached_amount: 148,
+  progress_percent: 73,
+  start_date: '2026-05-12',
+  completion_date: '2026-10-21',
+  withdrawal_enabled: false,
+};
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+function money(value: number): string {
+  return `$${Number(value || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function prettyDate(value: string): string {
+  if (!value) return '—';
+  const d = new Date(`${value}T00:00:00`);
+  return Number.isNaN(d.getTime())
+    ? value
+    : d.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+}
+
+export default function App() {
+  const [page, setPage] = useState<'welcome' | 'login' | 'forgot' | 'reset' | 'dashboard' | 'admin'>(
+    window.location.hash === '#reset' ? 'reset' : 'welcome'
+  );
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [user, setUser] = useState<User | null>(null);
+  const [settings, setSettings] = useState<Settings>(DEFAULTS);
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted || !data.session?.user) return;
+      const current = data.session.user;
+      setUser(current);
+      setPage(current.app_metadata?.role === 'admin' ? 'admin' : 'dashboard');
+      void loadSettings();
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function loadSettings() {
+    if (!supabase) return;
+
+    const { data } = await supabase
+      .from('program_settings')
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle();
+
+    if (data) setSettings({ ...DEFAULTS, ...data });
+  }
+
+  function go(next: typeof page) {
+    setMessage('');
+    setPage(next);
+  }
+
+  async function signIn(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!supabase) {
+      setMessage('Supabase is not configured. Add the Vercel environment variables.');
+      return;
+    }
+
+    setBusy(true);
+    setMessage('');
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    setBusy(false);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setUser(data.user);
+    await loadSettings();
+    setPage(data.user.app_metadata?.role === 'admin' ? 'admin' : 'dashboard');
+  }
+
+  async function forgot(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!supabase) {
+      setMessage('Supabase is not configured.');
+      return;
+    }
+
+    setBusy(true);
+    setMessage('');
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/#reset`,
+    });
+
+    setBusy(false);
+    setMessage(
+      error
+        ? error.message
+        : 'If this email belongs to an account, a reset email has been sent.'
+    );
+  }
+
+  async function resetPassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (newPassword.length < 8) {
+      setMessage('Password must be at least 8 characters.');
+      return;
+    }
+
+    if (!supabase) {
+      setMessage('Supabase is not configured.');
+      return;
+    }
+
+    setBusy(true);
+    setMessage('');
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    setBusy(false);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setNewPassword('');
+    window.location.hash = '';
+    setPage('login');
+    setMessage('Password updated successfully.');
+  }
+
+  async function saveSettings() {
+    if (!supabase) {
+      setMessage('Supabase is not configured.');
+      return;
+    }
+
+    setBusy(true);
+    setMessage('');
+
+    const payload = {
+      id: 1,
+      target_amount: Number(settings.target_amount) || 0,
+      reached_amount: Number(settings.reached_amount) || 0,
+      progress_percent: Math.max(0, Math.min(100, Number(settings.progress_percent) || 0)),
+      start_date: settings.start_date || null,
+      completion_date: settings.completion_date || null,
+      withdrawal_enabled: Boolean(settings.withdrawal_enabled),
+    };
+
+    const { data, error } = await supabase
+      .from('program_settings')
+      .upsert(payload)
+      .select()
+      .maybeSingle();
+
+    setBusy(false);
+
+    if (error) {
+      setMessage(`Unable to save: ${error.message}`);
+      return;
+    }
+
+    setSettings({ ...DEFAULTS, ...(data ?? payload) });
+    setMessage('Program settings saved successfully.');
+  }
+
+  async function logout() {
+    if (supabase) await supabase.auth.signOut();
+    setUser(null);
+    setPage('welcome');
+    setMessage('');
+  }
+
+  const progress = Math.max(0, Math.min(100, Number(settings.progress_percent) || 0));
+  const isAdmin = user?.app_metadata?.role === 'admin';
+  const withdrawalAvailable = Boolean(settings.withdrawal_enabled) || progress >= 100;
+
+  if (page === 'welcome') return <Welcome onLogin={() => go('login')} />;
+
+  if (page === 'login') {
+    return (
+      <Auth title="Welcome back" subtitle="Sign in to your private IB PROGRAM dashboard." onBack={() => go('welcome')}>
+        <form onSubmit={signIn}>
+          <Field label="Email address" type="email" value={email} onChange={setEmail} required />
+          <Field label="Password" type="password" value={password} onChange={setPassword} required />
+          <button className="primary full" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        </form>
+        <button className="textButton" onClick={() => go('forgot')}>Forgot password?</button>
+        {!supabase && <Notice>Supabase environment variables are not configured yet.</Notice>}
+        {message && <Notice>{message}</Notice>}
+      </Auth>
+    );
+  }
+
+  if (page === 'forgot') {
+    return (
+      <Auth title="Reset your password" subtitle="Enter your email and we'll send a secure reset link." onBack={() => go('login')}>
+        <form onSubmit={forgot}>
+          <Field label="Email address" type="email" value={email} onChange={setEmail} required />
+          <button className="primary full" disabled={busy}>{busy ? 'Sending…' : 'Send reset link'}</button>
+        </form>
+        {message && <Notice>{message}</Notice>}
+      </Auth>
+    );
+  }
+
+  if (page === 'reset') {
+    return (
+      <Auth title="Create a new password" subtitle="Choose a strong password with at least 8 characters." onBack={() => go('login')}>
+        <form onSubmit={resetPassword}>
+          <Field label="New password" type="password" value={newPassword} onChange={setNewPassword} minLength={8} required />
+          <button className="primary full" disabled={busy}>{busy ? 'Updating…' : 'Update password'}</button>
+        </form>
+        {message && <Notice>{message}</Notice>}
+      </Auth>
+    );
+  }
+
+  if (page === 'admin' && isAdmin) {
+    return (
+      <Shell user={user} onLogout={logout}>
+        <div className="eyebrow">ADMIN CONTROL</div>
+        <h1>Program settings</h1>
+        <p className="muted">Update the values displayed on the dashboard.</p>
+
+        <div className="settingsGrid">
+          <Field label="Target amount ($)" type="number" value={settings.target_amount}
+            onChange={(v) => setSettings({ ...settings, target_amount: Number(v) })} />
+          <Field label="Amount reached ($)" type="number" value={settings.reached_amount}
+            onChange={(v) => setSettings({ ...settings, reached_amount: Number(v) })} />
+          <Field label="Progress (%)" type="number" value={settings.progress_percent}
+            onChange={(v) => setSettings({ ...settings, progress_percent: Number(v) })} />
+          <Field label="Start date" type="date" value={settings.start_date}
+            onChange={(v) => setSettings({ ...settings, start_date: v })} />
+          <Field label="Expected completion" type="date" value={settings.completion_date}
+            onChange={(v) => setSettings({ ...settings, completion_date: v })} />
+        </div>
+
+        <label className="check">
+          <input type="checkbox" checked={Boolean(settings.withdrawal_enabled)}
+            onChange={(e) => setSettings({ ...settings, withdrawal_enabled: e.target.checked })} />
+          Enable withdrawal
+        </label>
+
+        <button className="primary" onClick={saveSettings} disabled={busy}>
+          {busy ? 'Saving…' : 'Save changes'}
+        </button>
+
+        {message && <Notice>{message}</Notice>}
+      </Shell>
+    );
+  }
+
+  if (!user) return <Welcome onLogin={() => go('login')} />;
+
+  return (
+    <Shell user={user} onLogout={logout}>
+      <div className="eyebrow">YOUR PROGRAM</div>
+      <h1>Progress dashboard</h1>
+      <p className="muted">Your latest IB PROGRAM information at a glance.</p>
+
+      <section className="amountSummary" aria-label="Program amounts">
+        <div className="amountBox">
+          <span>AMOUNT REACHED</span>
+          <strong>{money(settings.reached_amount)}</strong>
+        </div>
+        <div className="amountBox">
+          <span>TARGET AMOUNT</span>
+          <strong>{money(settings.target_amount)}</strong>
+        </div>
+        <div className="amountBox">
+          <span>PROGRESS</span>
+          <strong>{progress}%</strong>
+        </div>
+      </section>
+
+      <section className="statCard">
+        <div className="statTop">
+          <span>Program Progress</span>
+          <strong>{progress}%</strong>
+        </div>
+        <div className="bar"><span style={{ width: `${progress}%` }} /></div>
+
+        <div className="details">
+          <InfoDetail label="Amount reached" value={money(settings.reached_amount)} />
+          <InfoDetail label="Target amount" value={money(settings.target_amount)} />
+          <InfoDetail label="Start date" value={prettyDate(settings.start_date)} />
+          <InfoDetail label="Expected completion" value={prettyDate(settings.completion_date)} />
+        </div>
+      </section>
+
+      <section className="statusBox">
+        <div>
+          <span>Withdrawal status</span>
+          <strong>{withdrawalAvailable ? 'Available' : 'Locked'}</strong>
+        </div>
+        <button className="primary compact" disabled={!withdrawalAvailable}>
+          {withdrawalAvailable ? 'Withdrawal available' : 'Withdrawal locked'}
+        </button>
+      </section>
+    </Shell>
+  );
+}
+
+function Welcome({ onLogin }: { onLogin: () => void }) {
+  return (
+    <main className="landing">
+      <nav className="nav">
+        <div className="brand">IB PROGRAM</div>
+        <button className="ghost" onClick={onLogin}>Sign in</button>
+      </nav>
+      <section className="hero">
+        <div className="eyebrow">IB PROGRAM</div>
+        <h1>Welcome to your<br />private dashboard.</h1>
+        <p className="muted">Securely access your IB PROGRAM account and monitor your program progress.</p>
+        <button className="primary" onClick={onLogin}>Access dashboard</button>
+      </section>
+    </main>
+  );
+}
+
+function Auth({ title, subtitle, children, onBack }: {
+  title: string; subtitle: string; children: React.ReactNode; onBack: () => void;
+}) {
+  return (
+    <main className="auth">
+      <div className="authBox">
+        <button className="back" onClick={onBack}>← Back</button>
+        <div className="brand authBrand">IB PROGRAM</div>
+        <h1>{title}</h1>
+        <p className="muted">{subtitle}</p>
+        {children}
+      </div>
+    </main>
+  );
+}
+
+function Shell({ children, user, onLogout }: {
+  children: React.ReactNode; user: User; onLogout: () => void;
+}) {
+  return (
+    <main className="dashboard">
+      <nav className="nav">
+        <div className="brand">IB PROGRAM</div>
+        <div className="navRight">
+          <span className="user">{user.email ?? 'Guest'}</span>
+          <button className="ghost" onClick={onLogout}>Sign out</button>
+        </div>
+      </nav>
+      <section className="content">{children}</section>
+    </main>
+  );
+}
+
+function Field({ label, type = 'text', value, onChange, ...props }: {
+  label: string; type?: string; value: string | number; onChange: (value: string) => void;
+  [key: string]: unknown;
+}) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <input type={type} value={value ?? ''} onChange={(e) => onChange(e.target.value)} {...props} />
+    </label>
+  );
+}
+
+function InfoDetail({ label, value }: { label: string; value: string }) {
+  return <div><span>{label}</span><b>{value}</b></div>;
+}
+
+function Notice({ children }: { children: React.ReactNode }) {
+  return <div className="notice">{children}</div>;
 }
