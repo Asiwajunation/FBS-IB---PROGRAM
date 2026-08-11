@@ -20,3 +20,5 @@ Deploy:
 3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in Vercel.
 4. Build command: `npm run build`.
 5. Output directory: `dist`.
+
+Deployment trigger: latest Supabase password-recovery session fix is ready for production.
