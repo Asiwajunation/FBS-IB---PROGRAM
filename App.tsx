@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { createClient, type User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
+import { supabase } from './supabase';
 
 type Settings = { id: number; target_amount: number; reached_amount: number; progress_percent: number; start_date: string; completion_date: string; withdrawal_enabled: boolean; };
 const DEFAULTS: Settings = { id: 1, target_amount: 200, reached_amount: 148, progress_percent: 73, start_date: '2026-05-12', completion_date: '2026-10-21', withdrawal_enabled: false };
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 function money(value: number): string { return `$${Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 function prettyDate(value: string): string { if (!value) return '—'; const d = new Date(`${value}T00:00:00`); return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); }
 function normalizeSettings(data: Partial<Settings> | null | undefined): Settings { const target = Number(data?.target_amount ?? DEFAULTS.target_amount) || DEFAULTS.target_amount; const reached = Number(data?.reached_amount ?? DEFAULTS.reached_amount) || DEFAULTS.reached_amount; const suppliedProgress = Number(data?.progress_percent); const calculatedProgress = target > 0 ? (reached / target) * 100 : 0; const progress = Number.isFinite(suppliedProgress) && suppliedProgress > 0 ? suppliedProgress : calculatedProgress; return { id: Number(data?.id ?? DEFAULTS.id), target_amount: target, reached_amount: reached, progress_percent: Math.max(0, Math.min(100, progress)), start_date: data?.start_date ?? DEFAULTS.start_date, completion_date: data?.completion_date ?? DEFAULTS.completion_date, withdrawal_enabled: Boolean(data?.withdrawal_enabled ?? DEFAULTS.withdrawal_enabled) }; }
@@ -20,7 +18,6 @@ export default function App() {
     const initialize = async () => {
       const recovery = recoveryUrl();
       if (recovery.isRecovery) setPage('reset');
-      // Explicitly establish the recovery session from the URL when Supabase has not done so yet.
       if (recovery.accessToken && recovery.refreshToken) {
         const { error } = await supabase.auth.setSession({ access_token: recovery.accessToken, refresh_token: recovery.refreshToken });
         if (error) console.error('Could not establish recovery session:', error.message);
