@@ -3,66 +3,29 @@ import type { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
 type Settings = { id: number; target_amount: number; reached_amount: number; progress_percent: number; start_date: string; completion_date: string; withdrawal_enabled: boolean; };
-const DEFAULTS: Settings = { id: 1, target_amount: 200, reached_amount: 148, progress_percent: 73, start_date: '2026-05-12', completion_date: '2026-10-21', withdrawal_enabled: false };
+const DEFAULTS: Settings = { id: 1, target_amount: 200, reached_amount: 150, progress_percent: 75, start_date: '2026-05-12', completion_date: '2026-10-21', withdrawal_enabled: false };
 function money(value: number): string { return `$${Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 function prettyDate(value: string): string { if (!value) return '—'; const d = new Date(`${value}T00:00:00`); return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); }
 function normalizeSettings(data: Partial<Settings> | null | undefined): Settings { const target = Number(data?.target_amount ?? DEFAULTS.target_amount) || DEFAULTS.target_amount; const reached = Number(data?.reached_amount ?? DEFAULTS.reached_amount) || DEFAULTS.reached_amount; const suppliedProgress = Number(data?.progress_percent); const calculatedProgress = target > 0 ? (reached / target) * 100 : 0; const progress = Number.isFinite(suppliedProgress) && suppliedProgress > 0 ? suppliedProgress : calculatedProgress; return { id: Number(data?.id ?? DEFAULTS.id), target_amount: target, reached_amount: reached, progress_percent: Math.max(0, Math.min(100, progress)), start_date: data?.start_date ?? DEFAULTS.start_date, completion_date: data?.completion_date ?? DEFAULTS.completion_date, withdrawal_enabled: Boolean(data?.withdrawal_enabled ?? DEFAULTS.withdrawal_enabled) }; }
 
-function recoveryUrl() {
-  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  const query = new URLSearchParams(window.location.search);
-  return {
-    isRecovery: query.get('reset') === '1' || hash.get('type') === 'recovery' || hash.has('access_token') || query.has('code'),
-    accessToken: hash.get('access_token'),
-    refreshToken: hash.get('refresh_token'),
-    code: query.get('code'),
-  };
-}
+function recoveryUrl() { const hash = new URLSearchParams(window.location.hash.replace(/^#/, '')); const query = new URLSearchParams(window.location.search); return { isRecovery: query.get('reset') === '1' || hash.get('type') === 'recovery' || hash.has('access_token') || query.has('code'), accessToken: hash.get('access_token'), refreshToken: hash.get('refresh_token'), code: query.get('code') }; }
 
 export default function App() {
   const [page, setPage] = useState<'welcome'|'login'|'forgot'|'reset'|'dashboard'|'admin'>(() => recoveryUrl().isRecovery ? 'reset' : 'welcome');
   const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [newPassword, setNewPassword] = useState(''); const [user, setUser] = useState<User | null>(null); const [settings, setSettings] = useState<Settings>(DEFAULTS); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!supabase) return;
-    let mounted = true;
+    if (!supabase) return; let mounted = true;
     const initialize = async () => {
-      const recovery = recoveryUrl();
-      if (recovery.isRecovery) setPage('reset');
-
-      // Support both Supabase implicit recovery URLs (tokens in the hash)
-      // and PKCE recovery URLs (a ?code=... query parameter).
-      if (recovery.code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(recovery.code);
-        if (error) console.error('Could not exchange recovery code:', error.message);
-      } else if (recovery.accessToken && recovery.refreshToken) {
-        const { error } = await supabase.auth.setSession({ access_token: recovery.accessToken, refresh_token: recovery.refreshToken });
-        if (error) console.error('Could not establish recovery session:', error.message);
-      }
-
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      const current = data.session?.user ?? null;
-      setUser(current);
-
-      if (recovery.isRecovery) {
-        if (!current) setMessage('Recovery session could not be established. Please request a new reset link.');
-        else setMessage('Recovery session ready. Enter your new password.');
-        // Only remove recovery credentials after a session has been established.
-        if (current) window.history.replaceState({}, document.title, `${window.location.pathname}?reset=1`);
-        return;
-      }
-
+      const recovery = recoveryUrl(); if (recovery.isRecovery) setPage('reset');
+      if (recovery.code) { const { error } = await supabase.auth.exchangeCodeForSession(recovery.code); if (error) console.error('Could not exchange recovery code:', error.message); }
+      else if (recovery.accessToken && recovery.refreshToken) { const { error } = await supabase.auth.setSession({ access_token: recovery.accessToken, refresh_token: recovery.refreshToken }); if (error) console.error('Could not establish recovery session:', error.message); }
+      const { data } = await supabase.auth.getSession(); if (!mounted) return; const current = data.session?.user ?? null; setUser(current);
+      if (recovery.isRecovery) { if (!current) setMessage('Recovery session could not be established. Please request a new reset link.'); else setMessage('Recovery session ready. Enter your new password.'); if (current) window.history.replaceState({}, document.title, `${window.location.pathname}?reset=1`); return; }
       if (current) { setPage(current.app_metadata?.role === 'admin' ? 'admin' : 'dashboard'); await loadSettings(); }
     };
     void initialize();
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      const current = session?.user ?? null;
-      setUser(current);
-      if (event === 'PASSWORD_RECOVERY') { setPage('reset'); setMessage('Recovery session ready. Enter your new password.'); return; }
-      if (current && event !== 'SIGNED_OUT' && !recoveryUrl().isRecovery) { void loadSettings(); setPage(current.app_metadata?.role === 'admin' ? 'admin' : 'dashboard'); }
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => { const current = session?.user ?? null; setUser(current); if (event === 'PASSWORD_RECOVERY') { setPage('reset'); setMessage('Recovery session ready. Enter your new password.'); return; } if (current && event !== 'SIGNED_OUT' && !recoveryUrl().isRecovery) { void loadSettings(); setPage(current.app_metadata?.role === 'admin' ? 'admin' : 'dashboard'); } });
     return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, []);
 
@@ -70,41 +33,7 @@ export default function App() {
   function go(next: typeof page) { setMessage(''); setPage(next); }
   async function signIn(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); if (!supabase) { setMessage('Supabase is not configured. Add the Vercel environment variables.'); return; } setBusy(true); setMessage(''); const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password }); setBusy(false); if (error) { setMessage(error.message); return; } setUser(data.user); await loadSettings(); setPage(data.user.app_metadata?.role === 'admin' ? 'admin' : 'dashboard'); }
   async function forgot(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); if (!supabase) { setMessage('Supabase is not configured.'); return; } setBusy(true); setMessage(''); const redirectTo = `${window.location.origin}/?reset=1`; const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo }); setBusy(false); setMessage(error ? error.message : 'If this email belongs to an account, a reset email has been sent.'); }
-  async function resetPassword(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (newPassword.length < 8) { setMessage('Password must be at least 8 characters.'); return; }
-    if (!supabase) { setMessage('Supabase is not configured.'); return; }
-    setBusy(true); setMessage('');
-
-    // Re-establish the recovery session if the page was opened directly.
-    let { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) {
-      const recovery = recoveryUrl();
-      if (recovery.code) {
-        const result = await supabase.auth.exchangeCodeForSession(recovery.code);
-        sessionData = result.data;
-        if (result.error) console.error('Recovery code exchange failed:', result.error.message);
-      } else if (recovery.accessToken && recovery.refreshToken) {
-        const result = await supabase.auth.setSession({ access_token: recovery.accessToken, refresh_token: recovery.refreshToken });
-        sessionData = result.data;
-        if (result.error) console.error('Recovery token session failed:', result.error.message);
-      }
-    }
-
-    // Give the auth client a moment to finish URL/session processing before checking again.
-    if (!sessionData.session) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const retry = await supabase.auth.getSession();
-      sessionData = retry.data;
-    }
-
-    if (!sessionData.session) { setBusy(false); setMessage('Recovery session missing or expired. Please request a new password reset link.'); return; }
-
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setBusy(false);
-    if (error) { setMessage(error.message); return; }
-    await supabase.auth.signOut(); setNewPassword(''); window.history.replaceState({}, document.title, window.location.pathname); setUser(null); setPage('login'); setMessage('Password updated successfully. Please sign in with your new password.');
-  }
+  async function resetPassword(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); if (newPassword.length < 8) { setMessage('Password must be at least 8 characters.'); return; } if (!supabase) { setMessage('Supabase is not configured.'); return; } setBusy(true); setMessage(''); let { data: sessionData } = await supabase.auth.getSession(); if (!sessionData.session) { const recovery = recoveryUrl(); if (recovery.code) { const result = await supabase.auth.exchangeCodeForSession(recovery.code); sessionData = result.data; if (result.error) console.error('Recovery code exchange failed:', result.error.message); } else if (recovery.accessToken && recovery.refreshToken) { const result = await supabase.auth.setSession({ access_token: recovery.accessToken, refresh_token: recovery.refreshToken }); sessionData = result.data; if (result.error) console.error('Recovery token session failed:', result.error.message); } } if (!sessionData.session) { await new Promise(resolve => setTimeout(resolve, 300)); const retry = await supabase.auth.getSession(); sessionData = retry.data; } if (!sessionData.session) { setBusy(false); setMessage('Recovery session missing or expired. Please request a new password reset link.'); return; } const { error } = await supabase.auth.updateUser({ password: newPassword }); setBusy(false); if (error) { setMessage(error.message); return; } await supabase.auth.signOut(); setNewPassword(''); window.history.replaceState({}, document.title, window.location.pathname); setUser(null); setPage('login'); setMessage('Password updated successfully. Please sign in with your new password.'); }
   async function saveSettings() { if (!supabase) { setMessage('Supabase is not configured.'); return; } setBusy(true); setMessage(''); const payload = normalizeSettings(settings); const { data, error } = await supabase.from('program_settings').upsert(payload, { onConflict: 'id' }).select('id,target_amount,reached_amount,progress_percent,start_date,completion_date,withdrawal_enabled').single(); setBusy(false); if (error) { setMessage(`Unable to save: ${error.message}`); return; } setSettings(normalizeSettings(data)); setMessage('Program settings saved successfully.'); }
   async function logout() { if (supabase) await supabase.auth.signOut(); setUser(null); setPage('welcome'); setMessage(''); }
   const progress = Math.max(0, Math.min(100, Number(settings.progress_percent) || 0)); const isAdmin = user?.app_metadata?.role === 'admin'; const withdrawalAvailable = Boolean(settings.withdrawal_enabled) || progress >= 100;
