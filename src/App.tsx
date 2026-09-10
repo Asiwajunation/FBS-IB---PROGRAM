@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
@@ -14,6 +14,7 @@ export default function App(){
   const [settings,setSettings]=useState(DEFAULTS);
   const [withdrawalOpen,setWithdrawalOpen]=useState(false);
   const [partnerAccount,setPartnerAccount]=useState('');
+  const partnerInputRef=useRef<HTMLInputElement|null>(null);
   const [withdrawalStage,setWithdrawalStage]=useState<'form'|'processing'|'accepted'>('form');
   const [error,setError]=useState('');
 
@@ -36,12 +37,15 @@ export default function App(){
     setPartnerAccount('');
     setWithdrawalStage('form');
     setWithdrawalOpen(true);
+    window.setTimeout(()=>partnerInputRef.current?.focus(),100);
   };
 
   const addPartnerAccount=()=>{
-    const account=partnerAccount.trim();
+    // Read directly from the input as well as React state so mobile/browser input handling cannot leave the button with stale state.
+    const account=(partnerInputRef.current?.value ?? partnerAccount).trim();
     if(!account){
       setError('Please enter your FBS Partner Account.');
+      partnerInputRef.current?.focus();
       return;
     }
     setError('');
@@ -73,20 +77,24 @@ export default function App(){
           <p>Add your FBS Partner Account to continue this reference withdrawal flow.</p>
           <label htmlFor="partner-account" style={{display:'block',fontSize:13,fontWeight:600,marginBottom:6}}>FBS Partner Account</label>
           <input
+            ref={partnerInputRef}
             id="partner-account"
             type="text"
             value={partnerAccount}
-            onChange={e=>{setPartnerAccount(e.target.value);setError('');}}
+            onChange={e=>{setPartnerAccount(e.currentTarget.value);setError('');}}
+            onInput={e=>{setPartnerAccount(e.currentTarget.value);setError('');}}
             placeholder="Enter your FBS Partner Account"
             autoComplete="off"
-            autoFocus
-            style={{display:'block',width:'100%',boxSizing:'border-box',padding:14,marginBottom:8,border:'1px solid #999',borderRadius:8,fontSize:16,minHeight:48}}
+            autoCapitalize="none"
+            spellCheck={false}
+            style={{display:'block',width:'100%',boxSizing:'border-box',padding:14,marginBottom:8,border:'1px solid #999',borderRadius:8,fontSize:16,minHeight:52,touchAction:'manipulation'}}
           />
           {error&&<p role="alert" style={{color:'#b00020',fontSize:13,margin:'4px 0 10px'}}>{error}</p>}
           <button
             type="button"
             onClick={addPartnerAccount}
-            style={{width:'100%',padding:'13px 16px',borderRadius:8,cursor:'pointer',fontSize:16,minHeight:48}}
+            onTouchEnd={e=>{e.preventDefault();addPartnerAccount();}}
+            style={{width:'100%',padding:'13px 16px',borderRadius:8,cursor:'pointer',fontSize:16,minHeight:52,touchAction:'manipulation'}}
           >Continue</button>
         </div>}
 
