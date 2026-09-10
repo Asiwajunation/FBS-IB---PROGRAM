@@ -25,3 +25,5 @@ export default function App(){
   </div></div>}
  </main>;
 }
+
+// Force a fresh Vercel build so the production bundle matches this source.
