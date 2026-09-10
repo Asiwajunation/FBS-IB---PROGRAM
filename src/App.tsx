@@ -38,14 +38,14 @@ export default function App(){
     setWithdrawalOpen(true);
   };
 
-  const submitPartner=(event:React.FormEvent<HTMLFormElement>)=>{
-    event.preventDefault();
+  const addPartnerAccount=()=>{
     const account=partnerAccount.trim();
     if(!account){
       setError('Please enter your FBS Partner Account.');
       return;
     }
     setError('');
+    setPartnerAccount(account);
     setWithdrawalStage('processing');
     window.setTimeout(()=>setWithdrawalStage('accepted'),2200);
   };
@@ -69,22 +69,28 @@ export default function App(){
           <button type="button" onClick={()=>setWithdrawalOpen(false)} aria-label="Close">×</button>
         </div>
 
-        {withdrawalStage==='form'&&<form onSubmit={submitPartner}>
+        {withdrawalStage==='form'&&<div>
           <p>Add your FBS Partner Account to continue this reference withdrawal flow.</p>
+          <label htmlFor="partner-account" style={{display:'block',fontSize:13,fontWeight:600,marginBottom:6}}>FBS Partner Account</label>
           <input
+            id="partner-account"
             type="text"
             value={partnerAccount}
             onChange={e=>{setPartnerAccount(e.target.value);setError('');}}
-            placeholder="FBS Partner Account"
+            placeholder="Enter your FBS Partner Account"
             autoComplete="off"
             autoFocus
-            style={{width:'100%',boxSizing:'border-box',padding:12,marginBottom:8,border:'1px solid #bbb',borderRadius:8}}
+            style={{display:'block',width:'100%',boxSizing:'border-box',padding:14,marginBottom:8,border:'1px solid #999',borderRadius:8,fontSize:16,minHeight:48}}
           />
           {error&&<p role="alert" style={{color:'#b00020',fontSize:13,margin:'4px 0 10px'}}>{error}</p>}
-          <button type="submit" disabled={!partnerAccount.trim()} style={{padding:'11px 16px',borderRadius:8,cursor:partnerAccount.trim()?'pointer':'not-allowed',opacity:partnerAccount.trim()?1:.55}}>Add Account</button>
-        </form>}
+          <button
+            type="button"
+            onClick={addPartnerAccount}
+            style={{width:'100%',padding:'13px 16px',borderRadius:8,cursor:'pointer',fontSize:16,minHeight:48}}
+          >Continue</button>
+        </div>}
 
-        {withdrawalStage==='processing'&&<><p>Processing reference withdrawal…</p><div aria-label="processing">Please wait.</div></>}
+        {withdrawalStage==='processing'&&<div><p>Processing reference withdrawal…</p><div aria-label="processing">Please wait.</div></div>}
         {withdrawalStage==='accepted'&&<><h4>Accepted</h4><p>This reference withdrawal flow has been accepted for demonstration purposes. No funds have been transferred.</p><button type="button" onClick={()=>setWithdrawalOpen(false)}>Close</button></>}
         <p style={{fontSize:11,opacity:.65,marginTop:18}}>REFERENCE — This interface does not execute or confirm a real financial withdrawal.</p>
       </div>
